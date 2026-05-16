@@ -1,0 +1,34 @@
+# Production deployment of a single prober pointing at a remote coordinator.
+# Run from this directory after filling in .env:
+#
+#     cd deploy/prober
+#     docker compose up -d --build
+#
+# Required env (in deploy/prober/.env):
+#   PROBER_NAME=de-1
+#   COORDINATOR_URL=https://coordinator.example.com
+#   PROBER_API_TOKEN=<one-of-the-tokens-listed-in-coordinator-side>
+
+services:
+  prober:
+    build:
+      context: ../..
+      dockerfile: prober/Dockerfile
+    container_name: vpn-prober-prober
+    restart: unless-stopped
+    # OpenVPN inside the container needs NET_ADMIN + /dev/net/tun.
+    # Drop these two blocks if you don't need openvpn:// support.
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      PROBER_NAME: "${PROBER_NAME}"
+      PROBER_HOST: 0.0.0.0
+      PROBER_PORT: "8090"
+      COORDINATOR_URL: "${COORDINATOR_URL}"
+      PROBER_API_TOKEN: "${PROBER_API_TOKEN}"
+      PROBER_LOCAL_SOCKS_PORT: "10808"
+      PROBER_SITE_TIMEOUT: "10"
+      PROBER_LINK_TIMEOUT: "45"
+    # No ports exposed — prober only talks OUTBOUND to the coordinator.

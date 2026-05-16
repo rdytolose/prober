@@ -1,0 +1,127 @@
+{% extends "_base.html" %}
+{% block title %}New job · VPN Prober{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-title"><h2>New job</h2></div>
+  <p class="muted small">Submit a batch of VPN/proxy links to test. They run sequentially through one or more probers.</p>
+
+  {% if error %}
+    <div class="toast error">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/dashboard/new" enctype="multipart/form-data" id="new-job-form">
+
+    <label for="links_file">Links file (drag & drop a .txt file with one link per line)</label>
+    <div id="dropzone" class="dropzone">
+      <input type="file" name="links_file" id="links_file" accept=".txt,text/plain" style="display:none;">
+      <div id="dz-prompt">
+        <strong>Drop your .txt here</strong> or click to browse<br>
+        <span class="small">— or paste links directly below ↓</span>
+      </div>
+      <div id="dz-selected" style="display:none;">
+        <span class="filename" id="dz-filename"></span>
+        <span class="muted small" id="dz-size"></span>
+        <a href="#" class="muted small" id="dz-clear" style="margin-left:12px;">remove</a>
+      </div>
+    </div>
+
+    <div style="margin-top: 16px;">
+      <label for="links_text">Or paste links directly (one per line)</label>
+      <textarea name="links_text" id="links_text" rows="10" spellcheck="false"
+        placeholder="ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ@example.com:443#node-a
+vless://uuid@host.com:443?security=tls#node-b
+trojan://pass@jp.cdn.com:443#jp-1"></textarea>
+      <div class="muted small" style="margin-top:4px;">
+        <span id="link-count">0</span> links from textarea + whatever's in the file above.
+      </div>
+    </div>
+
+    <div class="row" style="margin-top: 16px;">
+      <div class="col">
+        <label for="urls_text">Test URLs (space, comma, or newline-separated)</label>
+        <input type="text" name="urls_text" id="urls_text"
+               value="https://www.google.com https://www.cloudflare.com"
+               placeholder="https://www.google.com https://www.cloudflare.com">
+      </div>
+      <div class="col">
+        <label for="label">Label (optional)</label>
+        <input type="text" name="label" id="label" placeholder="e.g. weekly-check-2025-05-16">
+      </div>
+    </div>
+
+    <div style="margin-top: 24px; display:flex; gap:12px;">
+      <button class="btn primary" type="submit">Create job</button>
+      <a href="/dashboard" class="btn ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Tips</h3>
+  <ul class="muted small" style="margin-top:0;">
+    <li><strong>Lines starting with <code>#</code> are ignored</strong> — good for comments.</li>
+    <li><strong>Empty lines are ignored.</strong> Trailing whitespace is trimmed.</li>
+    <li>One prober processes links <strong>sequentially</strong> (~2–45 s per link). For 1000+ links, register more probers from <a href="/dashboard/nodes">Nodes</a>.</li>
+    <li>While a job is running you can hit <strong>Stop</strong> on its detail page — the prober will halt on the next link boundary.</li>
+  </ul>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const dz = document.getElementById('dropzone');
+  const input = document.getElementById('links_file');
+  const prompt = document.getElementById('dz-prompt');
+  const sel = document.getElementById('dz-selected');
+  const fn = document.getElementById('dz-filename');
+  const sz = document.getElementById('dz-size');
+  const clear = document.getElementById('dz-clear');
+  const linkCount = document.getElementById('link-count');
+  const textarea = document.getElementById('links_text');
+
+  function fmtBytes(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+    return (n/1048576).toFixed(2) + ' MB';
+  }
+  function showFile(f) {
+    fn.textContent = f.name;
+    sz.textContent = ' · ' + fmtBytes(f.size);
+    prompt.style.display = 'none';
+    sel.style.display = 'block';
+  }
+  function clearFile() {
+    input.value = '';
+    prompt.style.display = 'block';
+    sel.style.display = 'none';
+  }
+  function updateCount() {
+    const t = textarea.value || '';
+    const lines = t.split(/\r?\n/).map(s => s.trim()).filter(s => s && !s.startsWith('#'));
+    linkCount.textContent = lines.length;
+  }
+
+  dz.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => { if (input.files.length) showFile(input.files[0]); });
+
+  ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation(); dz.classList.add('over');
+  }));
+  ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation(); dz.classList.remove('over');
+  }));
+  dz.addEventListener('drop', e => {
+    if (!e.dataTransfer.files.length) return;
+    const dt = new DataTransfer();
+    dt.items.add(e.dataTransfer.files[0]);
+    input.files = dt.files;
+    showFile(e.dataTransfer.files[0]);
+  });
+  clear.addEventListener('click', e => { e.preventDefault(); clearFile(); });
+
+  textarea.addEventListener('input', updateCount);
+  updateCount();
+</script>
+{% endblock %}

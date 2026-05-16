@@ -1,0 +1,115 @@
+{% extends "_base.html" %}
+{% block title %}Nodes · VPN Prober{% endblock %}
+{% block content %}
+
+{% if flash_token %}
+<div class="card" style="border-color: var(--accent);">
+  <h2>New prober token created</h2>
+  <p class="muted small">This token is shown <strong>only once</strong>. Save it now or revoke it and create another.</p>
+
+  <label>Label</label>
+  <input type="text" value="{{ flash_label or '(no label)' }}" readonly>
+
+  <label style="margin-top: 12px;">Prober token</label>
+  <div class="copy-row">
+    <input type="text" id="new_token" value="{{ flash_token }}" readonly>
+    <button class="btn primary" type="button" onclick="copyText(document.getElementById('new_token').value, this)">Copy token</button>
+  </div>
+
+  <label style="margin-top: 16px;">One-shot install command for a new VPS</label>
+  <div class="copy-row">
+    <textarea id="install_cmd" rows="6" readonly>bash scripts/install.sh --role prober \
+    --prober-name {{ flash_label or 'prober-1' }} \
+    --coordinator-url {{ origin }} \
+    --prober-token {{ flash_token }} \
+    --yes</textarea>
+    <button class="btn primary" type="button" onclick="copyText(document.getElementById('install_cmd').value, this)">Copy</button>
+  </div>
+  <p class="muted small" style="margin-top: 8px;">
+    SCP the archive to the new VPS, untar in <code>~/code/vpn-prober</code>, then run the command above.
+  </p>
+
+  <div style="margin-top: 16px;">
+    <a class="btn" href="/dashboard/nodes">Dismiss</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-title">
+    <h2>Create new prober token</h2>
+  </div>
+  <p class="muted small">Each prober VPS authenticates with one of these tokens. Tokens are stored in the coordinator database — revoking a token immediately disconnects the prober.</p>
+  <form method="post" action="/dashboard/nodes/create" style="display:flex; gap:12px; align-items:flex-end; max-width: 600px;">
+    <div style="flex:1;">
+      <label for="label">Label (e.g. <code>de-1</code>, <code>us-east</code>)</label>
+      <input type="text" name="label" id="label" placeholder="prober-1" required>
+    </div>
+    <button class="btn primary" type="submit">+ Generate token</button>
+  </form>
+</div>
+
+<div class="row">
+  <div class="col">
+    <div class="card">
+      <div class="card-title"><h2>Prober tokens</h2></div>
+      {% if tokens %}
+      <table>
+        <thead>
+          <tr><th>Label</th><th>Token</th><th>Created</th><th>Last used</th><th>State</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for t in tokens %}
+          <tr>
+            <td>{{ t.label }}</td>
+            <td><code>{{ t.token_masked }}</code></td>
+            <td class="muted small">{{ (t.created_at or '')[:19].replace('T',' ') }}</td>
+            <td class="muted small">{{ (t.last_used_at or '')[:19].replace('T',' ') if t.last_used_at else '—' }}</td>
+            <td>
+              {% if t.revoked %}<span class="badge cancelled">revoked</span>
+              {% else %}<span class="badge done">active</span>{% endif %}
+            </td>
+            <td>
+              {% if not t.revoked %}
+              <form method="post" action="/dashboard/nodes/{{ t.id }}/revoke" style="display:inline;"
+                    onsubmit="return confirm('Revoke this token? Prober using it will get 401.');">
+                <button class="btn danger" type="submit">revoke</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted small">No tokens stored in the database yet. The legacy <code>COORDINATOR_API_TOKENS</code> from <code>.env</code> still works.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <div class="card-title"><h2>Registered probers</h2></div>
+      {% if probers %}
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Last seen</th><th>Processed</th></tr>
+        </thead>
+        <tbody>
+          {% for p in probers %}
+          <tr>
+            <td><code>{{ p.name }}</code></td>
+            <td class="muted small">{{ (p.last_seen or '')[:19].replace('T',' ') }}</td>
+            <td>{{ p.processed_links }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted small">No probers have registered yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

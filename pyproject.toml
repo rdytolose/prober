@@ -1,0 +1,53 @@
+[project]
+name = "vpn-prober"
+version = "0.1.0"
+description = "Distributed VPN/proxy prober: takes connection URLs, tests sites through them, reports back to a central coordinator."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "vpn-prober contributors" }]
+
+dependencies = [
+    "fastapi>=0.110",
+    "python-multipart>=0.0.9",
+    "uvicorn[standard]>=0.27",
+    "httpx[socks]>=0.27",
+    "pydantic>=2.5",
+    "pydantic-settings>=2.2",
+    "PyYAML>=6.0",
+    "python-socks[asyncio]>=2.4",
+    "aiosqlite>=0.20",
+    "sqlalchemy[asyncio]>=2.0",
+    "jinja2>=3.1",
+    "tenacity>=8.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+]
+
+[project.scripts]
+vpn-prober = "prober.main:main"
+vpn-prober-coordinator = "coordinator.main:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["prober*", "coordinator*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

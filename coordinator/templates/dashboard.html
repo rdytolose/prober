@@ -1,0 +1,127 @@
+{% extends "_base.html" %}
+{% block title %}Dashboard · VPN Prober{% endblock %}
+{% block head_extra %}<meta http-equiv="refresh" content="5">{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-title">
+    <h2>Overview</h2>
+    <span class="muted small">auto-refresh every 5s</span>
+  </div>
+  <div class="kpi">
+    <div class="item">
+      <div class="label">Probers</div>
+      <div class="value">{{ probers | length }}</div>
+    </div>
+    <div class="item">
+      <div class="label">Jobs (recent)</div>
+      <div class="value">{{ jobs | length }}</div>
+    </div>
+    <div class="item">
+      <div class="label">Outcomes total</div>
+      <div class="value">{{ total_outcomes }}</div>
+    </div>
+    <div class="item">
+      <div class="label">OK outcomes</div>
+      <div class="value" style="color: var(--ok);">{{ total_ok }}</div>
+    </div>
+    <div class="item">
+      <div class="label">FAIL outcomes</div>
+      <div class="value" style="color: var(--fail);">{{ total_outcomes - total_ok }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col" style="flex: 2;">
+    <div class="card">
+      <div class="card-title">
+        <h2>Recent jobs</h2>
+        <a class="btn primary" href="/dashboard/new">+ New job</a>
+      </div>
+      {% if jobs %}
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Label</th>
+            <th>Progress</th>
+            <th>OK</th>
+            <th>FAIL</th>
+            <th>Prober</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for j in jobs %}
+          <tr>
+            <td><a href="/dashboard/jobs/{{ j.id }}"><code>{{ j.id[:8] }}</code></a></td>
+            <td><span class="badge {{ j.status }}">{{ j.status }}</span></td>
+            <td class="muted">{{ j.label or '—' }}</td>
+            <td style="min-width: 180px;">
+              <div class="muted small">{{ j.done }} / {{ j.total }} · {{ j.percent }}%</div>
+              <div class="progress {% if j.status=='done' %}ok{% elif j.status=='cancelled' %}warn{% endif %}">
+                <div class="bar" style="width: {{ j.percent }}%"></div>
+              </div>
+            </td>
+            <td style="color: var(--ok);">{{ j.ok }}</td>
+            <td style="color: var(--fail);">{{ j.fail }}</td>
+            <td class="muted small">{{ j.claimed_by or '—' }}</td>
+            <td class="muted small">{{ (j.created_at or '')[:19].replace('T',' ') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted">No jobs yet. Click <a href="/dashboard/new">+ New job</a> to submit your first batch of links.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <div class="card-title">
+        <h2>Probers</h2>
+        <a class="btn" href="/dashboard/nodes">manage →</a>
+      </div>
+      {% if probers %}
+      <table>
+        <thead><tr><th>Name</th><th>Last seen</th></tr></thead>
+        <tbody>
+          {% for p in probers %}
+          <tr>
+            <td><code>{{ p.name }}</code></td>
+            <td class="muted small">{{ (p.last_seen or '')[:19].replace('T',' ') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted">No probers registered. Open <a href="/dashboard/nodes">Nodes</a> to create one.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom: 8px;">By protocol</h2>
+      {% if stats_by_protocol %}
+      <table>
+        <thead><tr><th>Protocol</th><th>OK</th><th>Total</th></tr></thead>
+        <tbody>
+          {% for s in stats_by_protocol %}
+          <tr>
+            <td><code>{{ s.protocol }}</code></td>
+            <td style="color: var(--ok);">{{ s.ok }}</td>
+            <td>{{ s.total }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted small">No outcomes yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

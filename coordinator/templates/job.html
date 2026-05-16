@@ -1,0 +1,103 @@
+{% extends "_base.html" %}
+{% block title %}Job {{ job.id[:8] }} · VPN Prober{% endblock %}
+{% block head_extra %}
+{% if job.status in ('pending', 'claimed') %}
+<meta http-equiv="refresh" content="3">
+{% endif %}
+{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-title">
+    <h2>
+      Job <code>{{ job.id }}</code>
+      <span class="badge {{ job.status }}">{{ job.status }}</span>
+    </h2>
+    <div>
+      {% if job.status in ('pending', 'claimed') %}
+      <form method="post" action="/dashboard/jobs/{{ job.id }}/cancel" style="display:inline" onsubmit="return confirm('Stop this job?');">
+        <button class="btn danger" type="submit">■ Stop job</button>
+      </form>
+      {% endif %}
+      <a class="btn" href="/dashboard/jobs">← all jobs</a>
+    </div>
+  </div>
+
+  <div class="kpi">
+    <div class="item"><div class="label">Label</div><div class="value" style="font-size:14px;">{{ job.label or '—' }}</div></div>
+    <div class="item"><div class="label">Prober</div><div class="value" style="font-size:14px;">{{ job.claimed_by or '—' }}</div></div>
+    <div class="item"><div class="label">Total links</div><div class="value">{{ job.total }}</div></div>
+    <div class="item"><div class="label">Done</div><div class="value">{{ job.done }}</div></div>
+    <div class="item"><div class="label">OK</div><div class="value" style="color: var(--ok);">{{ job.ok }}</div></div>
+    <div class="item"><div class="label">FAIL</div><div class="value" style="color: var(--fail);">{{ job.fail }}</div></div>
+  </div>
+
+  <div style="margin-top: 16px;">
+    <div class="muted small">{{ job.percent }}% complete · {% if job.status in ('pending','claimed') %}auto-refresh every 3s{% else %}finished{% endif %}</div>
+    <div class="progress {% if job.status=='done' %}ok{% elif job.status=='cancelled' %}warn{% endif %}">
+      <div class="bar" style="width: {{ job.percent }}%"></div>
+    </div>
+  </div>
+
+  {% if job.test_urls %}
+  <div style="margin-top: 16px;" class="muted small">
+    <span>Test URLs:</span>
+    {% for u in job.test_urls %}<code style="margin-right:8px;">{{ u }}</code>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-title">
+    <h2>Outcomes (latest 500)</h2>
+    <span class="muted small">
+      {% if outcomes %}showing {{ outcomes | length }} of {{ job.done }}{% endif %}
+    </span>
+  </div>
+
+  {% if outcomes %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Status</th>
+        <th>Protocol</th>
+        <th>Server</th>
+        <th>Remark</th>
+        <th>Startup</th>
+        <th>Egress IP</th>
+        <th>Error</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in outcomes %}
+      <tr>
+        <td class="muted small">{{ o.id }}</td>
+        <td>{% if o.ok %}<span class="badge ok">OK</span>{% else %}<span class="badge fail">FAIL</span>{% endif %}</td>
+        <td><code>{{ o.protocol or '?' }}</code></td>
+        <td class="muted small">{{ o.server or '' }}{% if o.port %}:{{ o.port }}{% endif %}</td>
+        <td class="muted small">{{ o.remark or '' }}</td>
+        <td class="muted small">{{ o.engine_startup_ms if o.engine_startup_ms is not none else '' }}{% if o.engine_startup_ms is not none %} ms{% endif %}</td>
+        <td class="muted small">
+          {% set meta = o.meta or {} %}
+          {{ meta.get('ip') or '' }}{% if meta.get('country') %} <span class="pill">{{ meta.country }}</span>{% endif %}
+        </td>
+        <td class="muted small" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">{{ o.error or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">
+    {% if job.status == 'pending' %}
+      Job is queued. Waiting for a prober to claim it…
+    {% elif job.status == 'claimed' %}
+      Prober is working. First results will appear here in a few seconds (refresh is automatic).
+    {% else %}
+      No outcomes recorded.
+    {% endif %}
+  </p>
+  {% endif %}
+</div>
+
+{% endblock %}

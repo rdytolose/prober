@@ -1,0 +1,50 @@
+{% extends "_base.html" %}
+{% block title %}Jobs · VPN Prober{% endblock %}
+{% block head_extra %}<meta http-equiv="refresh" content="10">{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-title">
+    <h2>All jobs</h2>
+    <a class="btn primary" href="/dashboard/new">+ New job</a>
+  </div>
+  {% if jobs %}
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Status</th>
+        <th>Label</th>
+        <th>Progress</th>
+        <th>OK</th>
+        <th>FAIL</th>
+        <th>Prober</th>
+        <th>Created</th>
+        <th>Done</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td><a href="/dashboard/jobs/{{ j.id }}"><code>{{ j.id[:8] }}</code></a></td>
+        <td><span class="badge {{ j.status }}">{{ j.status }}</span></td>
+        <td class="muted">{{ j.label or '—' }}</td>
+        <td style="min-width: 200px;">
+          <div class="muted small">{{ j.done }} / {{ j.total }} · {{ j.percent }}%</div>
+          <div class="progress {% if j.status=='done' %}ok{% elif j.status=='cancelled' %}warn{% endif %}">
+            <div class="bar" style="width: {{ j.percent }}%"></div>
+          </div>
+        </td>
+        <td style="color: var(--ok);">{{ j.ok }}</td>
+        <td style="color: var(--fail);">{{ j.fail }}</td>
+        <td class="muted small">{{ j.claimed_by or '—' }}</td>
+        <td class="muted small">{{ (j.created_at or '')[:19].replace('T',' ') }}</td>
+        <td class="muted small">{{ (j.done_at or '')[:19].replace('T',' ') if j.done_at else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No jobs yet. <a href="/dashboard/new">Create one</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

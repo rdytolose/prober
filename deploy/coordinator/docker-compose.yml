@@ -1,0 +1,61 @@
+# Production deployment of the coordinator + Caddy reverse proxy with
+# automatic HTTPS via Let's Encrypt.  Run from this directory:
+#
+#     cd deploy/coordinator
+#     docker compose up -d --build
+#
+# Required env (set in deploy/coordinator/.env):
+#   DOMAIN=coordinator.example.com
+#   ACME_EMAIL=you@example.com
+#   COORDINATOR_API_TOKENS=tok-prober-1,tok-prober-2,...
+#   COORDINATOR_ADMIN_TOKEN=long-random-admin-token
+#
+# Note: build context is two levels up so the Dockerfile can see prober/ &
+# coordinator/ source trees.
+
+services:
+  coordinator:
+    build:
+      context: ../..
+      dockerfile: coordinator/Dockerfile
+    container_name: vpn-prober-coordinator
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      COORDINATOR_HOST: 0.0.0.0
+      COORDINATOR_PORT: "8080"
+      COORDINATOR_DB_URL: "sqlite+aiosqlite:///./data/coordinator.db"
+      COORDINATOR_API_TOKENS: "${COORDINATOR_API_TOKENS}"
+      COORDINATOR_ADMIN_TOKEN: "${COORDINATOR_ADMIN_TOKEN}"
+    volumes:
+      - coordinator-data:/app/data
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: vpn-prober-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: "${DOMAIN}"
+      ACME_EMAIL: "${ACME_EMAIL}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - internal
+    depends_on:
+      - coordinator
+
+volumes:
+  coordinator-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  internal:

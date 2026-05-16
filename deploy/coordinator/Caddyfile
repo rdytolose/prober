@@ -1,0 +1,24 @@
+# Caddy automatically obtains and renews Let's Encrypt certificates.
+# {$DOMAIN} and {$ACME_EMAIL} are read from the docker-compose env.
+
+{
+    email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+    encode gzip
+    reverse_proxy coordinator:8080
+
+    # Tighten a few headers.
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+        -Server
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

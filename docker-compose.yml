@@ -1,0 +1,45 @@
+services:
+  coordinator:
+    build:
+      context: .
+      dockerfile: coordinator/Dockerfile
+    container_name: vpn-prober-coordinator
+    restart: unless-stopped
+    environment:
+      COORDINATOR_HOST: 0.0.0.0
+      COORDINATOR_PORT: "8080"
+      COORDINATOR_DB_URL: "sqlite+aiosqlite:///./data/coordinator.db"
+      COORDINATOR_API_TOKENS: "${COORDINATOR_API_TOKENS:-changeme-token-1}"
+      COORDINATOR_ADMIN_TOKEN: "${COORDINATOR_ADMIN_TOKEN:-changeme-admin}"
+    ports:
+      - "${COORDINATOR_PORT:-8080}:8080"
+    volumes:
+      - coordinator-data:/app/data
+
+  prober-1:
+    build:
+      context: .
+      dockerfile: prober/Dockerfile
+    container_name: vpn-prober-1
+    restart: unless-stopped
+    depends_on:
+      - coordinator
+    # OpenVPN inside the container needs NET_ADMIN + access to /dev/net/tun.
+    # Drop these two lines if you only intend to test sing-box protocols.
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      PROBER_NAME: prober-1
+      PROBER_PORT: "8090"
+      COORDINATOR_URL: "http://coordinator:8080"
+      PROBER_API_TOKEN: "${PROBER_API_TOKEN_1:-changeme-token-1}"
+      PROBER_LOCAL_SOCKS_PORT: "10808"
+      PROBER_SITE_TIMEOUT: "10"
+      PROBER_LINK_TIMEOUT: "45"
+    ports:
+      - "8090:8090"
+
+volumes:
+  coordinator-data:

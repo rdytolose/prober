@@ -2,20 +2,27 @@
 {% extends "_base.html" %}
 {% block title %}Login · VPN Prober{% endblock %}
 {% block content %}
-<div style="max-width: 380px; margin: 80px auto;">
-  <div class="card">
-    <h2>Admin login</h2>
-    <p class="muted small">Paste your admin token (from <code>.env</code> on the coordinator VPS, key <code>COORDINATOR_ADMIN_TOKEN</code>).</p>
-    {% if error %}
-      <div class="toast error">Invalid token.</div>
-    {% endif %}
-    <form method="post" action="/dashboard/login">
-      <label for="token">Admin token</label>
-      <input type="password" name="token" id="token" autofocus required>
-      <div style="margin-top: 12px;">
-        <button class="btn primary" type="submit">Sign in</button>
-      </div>
-    </form>
+<div class="login-shell">
+  <div class="login-card">
+    <div class="login-hero">
+      <img src="/static/hero.png" alt="VPN Prober mascot">
+      <h1>VPN Prober</h1>
+      <div class="muted small">distributed proxy prober · admin sign in</div>
+    </div>
+    <div class="card">
+      <h2>Admin login</h2>
+      <p class="muted small">Paste your admin token (from <code>.env</code> on the coordinator VPS, key <code>COORDINATOR_ADMIN_TOKEN</code>).</p>
+      {% if error %}
+        <div class="toast error">Invalid token.</div>
+      {% endif %}
+      <form method="post" action="/dashboard/login">
+        <label for="token">Admin token</label>
+        <input type="password" name="token" id="token" autofocus required>
+        <div style="margin-top: 14px;">
+          <button class="btn primary" type="submit">Sign in</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock %}

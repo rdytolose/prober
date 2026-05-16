@@ -1,8 +1,8 @@
 {% extends "_base.html" %}
 {% block title %}Job {{ job.id[:8] }} · VPN Prober{% endblock %}
-{% block head_extra %}
+{% block scripts %}
 {% if job.status in ('pending', 'claimed') %}
-<meta http-equiv="refresh" content="3">
+<script>window.AUTO_REFRESH_MS = 3000;</script>
 {% endif %}
 {% endblock %}
 {% block content %}
@@ -33,7 +33,7 @@
   </div>
 
   <div style="margin-top: 16px;">
-    <div class="muted small">{{ job.percent }}% complete · {% if job.status in ('pending','claimed') %}auto-refresh every 3s{% else %}finished{% endif %}</div>
+    <div class="muted small">{{ job.percent }}% complete · {% if job.status in ('pending','claimed') %}live · 3s{% else %}finished{% endif %}</div>
     <div class="progress {% if job.status=='done' %}ok{% elif job.status=='cancelled' %}warn{% endif %}">
       <div class="bar" style="width: {{ job.percent }}%"></div>
     </div>

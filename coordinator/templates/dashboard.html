@@ -1,12 +1,12 @@
 {% extends "_base.html" %}
 {% block title %}Dashboard · VPN Prober{% endblock %}
-{% block head_extra %}<meta http-equiv="refresh" content="5">{% endblock %}
+{% block scripts %}<script>window.AUTO_REFRESH_MS = 5000;</script>{% endblock %}
 {% block content %}
 
 <div class="card">
   <div class="card-title">
     <h2>Overview</h2>
-    <span class="muted small">auto-refresh every 5s</span>
+    <span class="muted small">live · 5s</span>
   </div>
   <div class="kpi">
     <div class="item">
